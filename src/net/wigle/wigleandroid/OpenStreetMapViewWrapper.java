@@ -34,11 +34,15 @@ public final class OpenStreetMapViewWrapper extends Overlay {
   
   private final Paint trailBackPaint = new Paint();
 	private final Paint trailPaint = new Paint();
+	private final Paint thickTrailPaint = new Paint();
 	private final Paint trailDBPaint = new Paint();
+	private final Paint thickTrailDBPaint = new Paint();
 	
 	private final Paint trailCellBackPaint = new Paint();
   private final Paint trailCellPaint = new Paint();
+  private final Paint thickTrailCellPaint = new Paint();
   private final Paint trailCellDBPaint = new Paint();
+  private final Paint thickTrailCellDBPaint = new Paint();
   
   private Paint trailBackSizePaint;
   private Paint trailSizePaint;
@@ -93,10 +97,20 @@ public final class OpenStreetMapViewWrapper extends Overlay {
     trailDBPaint.setStyle( Style.STROKE );
     trailDBPaint.setStrokeWidth( 2f );
     
+    thickTrailDBPaint.setColor( Color.argb( 200, 10, 64, 220 ) );
+    thickTrailDBPaint.setAntiAlias( true );
+    thickTrailDBPaint.setStyle( Style.STROKE );
+    thickTrailDBPaint.setStrokeWidth( 2.75f );
+    
     trailPaint.setColor( Color.argb( 200, 255, 32, 32 ) );
     trailPaint.setAntiAlias( true );
     trailPaint.setStyle( Style.STROKE );
     trailPaint.setStrokeWidth( 2f );
+    
+    thickTrailPaint.setColor( Color.argb( 200, 255, 32, 32 ) );
+    thickTrailPaint.setAntiAlias( true );
+    thickTrailPaint.setStyle( Style.STROKE );
+    thickTrailPaint.setStrokeWidth( 2.75f );
     
     trailBackPaint.setColor( Color.argb( 128, 240, 240, 240 ) );
     trailBackPaint.setAntiAlias( true );
@@ -108,21 +122,32 @@ public final class OpenStreetMapViewWrapper extends Overlay {
     trailCellDBPaint.setStyle( Style.STROKE );
     trailCellDBPaint.setStrokeWidth( 2f );
     
+    thickTrailCellDBPaint.setColor( Color.argb( 200, 64, 10, 220 ) );
+    thickTrailCellDBPaint.setStyle( Style.STROKE );
+    thickTrailCellDBPaint.setStrokeWidth( 2.75f );
+    
     trailCellPaint.setColor( Color.argb( 200, 128, 200, 200 ) );
     trailCellPaint.setStyle( Style.STROKE );
     trailCellPaint.setStrokeWidth( 2f );
+    
+    thickTrailCellPaint.setColor( Color.argb( 200, 128, 200, 200 ) );
+    thickTrailCellPaint.setStyle( Style.STROKE );
+    thickTrailCellPaint.setStrokeWidth( 2.75f );    
     
     trailCellBackPaint.setColor( Color.argb( 128, 240, 240, 240 ) );
     trailCellBackPaint.setStyle( Style.FILL );
     trailCellBackPaint.setStrokeWidth( 3f );
         
     trailBackSizePaint = new Paint(trailBackPaint);
+    trailBackSizePaint.setAntiAlias( true );
     trailBackSizePaint.setStyle( Style.STROKE );
     trailBackSizePaint.setStrokeWidth( 2f );
     trailSizePaint = new Paint(trailPaint);
+    trailSizePaint.setAntiAlias( true );
     trailSizePaint.setColor( Color.argb( 128, 200, 128, 200 ) );
     trailSizePaint.setStyle( Style.FILL );
     trailDBSizePaint = new Paint(trailDBPaint);
+    trailDBSizePaint.setAntiAlias( true );
     trailDBSizePaint.setColor( Color.argb( 128, 10, 64, 220 ) );
     trailDBSizePaint.setStyle( Style.FILL );
     
@@ -250,6 +275,7 @@ public final class OpenStreetMapViewWrapper extends Overlay {
     if ( boost < 2f ) {
       boost = 2f;
     }
+    // boost = 16f;
         
     renderCircleNumbers( c, osmv, entrySet, boost );        
     renderSsidStrings( c, osmv, boost );
@@ -420,7 +446,9 @@ public final class OpenStreetMapViewWrapper extends Overlay {
         point = proj.toMapPixels( entry.getKey(), point );
         projected = true;
         float size = wifiSize;
-        Paint paint = value.newWifiForDB > 0 ? trailDBPaint : trailPaint;
+        final Paint tPaint = osmv.getZoomLevel() >= 18 ? thickTrailPaint : trailPaint;
+        final Paint tDBPaint = osmv.getZoomLevel() >= 18 ? thickTrailDBPaint : trailDBPaint;
+        Paint paint = value.newWifiForDB > 0 ? tDBPaint : tPaint;
         if ( circleSizeMap ) {
           size = (Math.max(value.newWifiForDB, value.newWifiForRun) * boost) + 1;
           paint = value.newWifiForDB > 0 ? trailDBSizePaint : trailSizePaint;
@@ -433,7 +461,9 @@ public final class OpenStreetMapViewWrapper extends Overlay {
           point = proj.toMapPixels( entry.getKey(), point );
         }
         float size = cellSize;
-        Paint paint = value.newCellForDB > 0 ? trailCellDBPaint : trailCellPaint;
+        final Paint cPaint = osmv.getZoomLevel() >= 18 ? thickTrailCellPaint : trailCellPaint;
+        final Paint cDBPaint = osmv.getZoomLevel() >= 18 ? thickTrailCellDBPaint : trailCellDBPaint;        
+        Paint paint = value.newCellForDB > 0 ? cDBPaint : cPaint;
         if ( circleSizeMap ) {
           size = (Math.max(value.newCellForDB, value.newCellForRun) * boost) + 1;
           paint = value.newCellForDB > 0 ? trailCellDBSizePaint : trailCellSizePaint;
