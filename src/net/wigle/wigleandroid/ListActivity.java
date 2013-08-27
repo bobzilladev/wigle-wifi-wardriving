@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -35,6 +37,7 @@ import org.osmdroid.util.GeoPoint;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ClipData.Item;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -336,6 +339,14 @@ public final class ListActivity extends Activity implements FileUploaderListener
         info( "setStatusUI" );
         setStatusUI( (String) null );
         info( "setup complete" );
+        
+        try {
+          Method method = getClass().getMethod("invalidateOptionsMenu");
+          method.invoke(this);
+        }
+        catch (Exception ex) {
+          info("ex: " + ex);
+        }
     }
     
     public void setNetCountUI() {
@@ -580,29 +591,52 @@ public final class ListActivity extends Activity implements FileUploaderListener
       super.finish();
     }
     
+    public static final void showIfRoom( final MenuItem item ) {
+      try {
+        // item.setShowAsAction(actionEnum)
+        final Method method = item.getClass().getMethod("setShowAsAction", Integer.class);
+        method.invoke(item, 1);
+      }
+      catch ( final NoSuchMethodException ex ) {
+        ListActivity.error( "no such method: " + ex, ex );
+      }
+      catch ( final IllegalAccessException ex ) {
+        ListActivity.error( "illegal in static: " + ex, ex );
+      }
+      catch ( final InvocationTargetException ex ) {
+        ListActivity.error( "target exception in static: " + ex, ex );
+      }
+    }
+    
     /* Creates the menu items */
     @Override
     public boolean onCreateOptionsMenu( final Menu menu ) {
       MenuItem item = menu.add(0, MENU_SORT, 0, getString(R.string.menu_sort));
       item.setIcon( android.R.drawable.ic_menu_sort_alphabetically );
+      showIfRoom(item);
       
       final String scan = isScanning() ? getString(R.string.off) : getString(R.string.on);
       item = menu.add(0, MENU_SCAN, 0, getString(R.string.scan) + " " + scan);
-      item.setIcon( isScanning() ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play );      
+      item.setIcon( isScanning() ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play );
+      showIfRoom(item);
       
       final String wake = MainActivity.isScreenLocked( this ) ? 
           getString(R.string.menu_screen_sleep) : getString(R.string.menu_screen_wake);
       item = menu.add(0, MENU_WAKELOCK, 0, wake);
       item.setIcon( android.R.drawable.ic_menu_gallery );
+      showIfRoom(item);
       
       item = menu.add(0, MENU_EXIT, 0, getString(R.string.menu_exit));
       item.setIcon( android.R.drawable.ic_menu_close_clear_cancel );
+      showIfRoom(item);
       
       item = menu.add(0, MENU_FILTER, 0, getString(R.string.menu_ssid_filter));
       item.setIcon( android.R.drawable.ic_menu_search );
+      showIfRoom(item);
               
       item = menu.add(0, MENU_SETTINGS, 0, getString(R.string.menu_settings));
       item.setIcon( android.R.drawable.ic_menu_preferences );
+      showIfRoom(item);
         
       return true;
     }
