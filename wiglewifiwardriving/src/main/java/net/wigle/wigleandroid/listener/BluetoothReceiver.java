@@ -136,9 +136,11 @@ public final class BluetoothReceiver extends BroadcastReceiver {
     }
 
     public void stopScanning() {
-        if (Build.VERSION.SDK_INT >= 21) {
-            final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (bluetoothAdapter != null) {
+        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter != null) {
+            bluetoothAdapter.cancelDiscovery();
+
+            if (Build.VERSION.SDK_INT >= 21) {
                 final BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
                 if (bluetoothLeScanner != null && scanning.compareAndSet(true, false)) {
                     bluetoothLeScanner.stopScan(scanCallback);

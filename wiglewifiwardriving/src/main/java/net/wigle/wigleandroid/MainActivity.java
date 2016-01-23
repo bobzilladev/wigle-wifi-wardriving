@@ -372,7 +372,8 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(final int requestCode, final String permissions[], final int[] grantResults) {
+    public void onRequestPermissionsResult(final int requestCode, @NonNull final String permissions[],
+                                           @NonNull final int[] grantResults) {
         switch (requestCode) {
             case WRITE_EXTERNAL_STORAGE_PERMISSIONS_REQUEST:
             case LOCATION_PERMISSIONS_REQUEST: {
@@ -825,6 +826,7 @@ public final class MainActivity extends AppCompatActivity {
             return new FileOutputStream(file);
         }
 
+        //noinspection deprecation
         return context.openFileOutput(filename, Context.MODE_WORLD_READABLE);
     }
 
@@ -1451,10 +1453,19 @@ public final class MainActivity extends AppCompatActivity {
             info("No bluetooth adapter");
             return;
         }
+        final SharedPreferences prefs = getSharedPreferences( ListFragment.SHARED_PREFS, 0 );
+        final Editor edit = prefs.edit();
         if (!bt.isEnabled()) {
             info("Enable bluetooth");
+            // tell user, cuz this takes a little while
+            Toast.makeText( this, getString(R.string.turn_on_bt), Toast.LENGTH_LONG ).show();
+            edit.putBoolean(ListFragment.PREF_BT_WAS_OFF, true);
             bt.enable();
         }
+        else {
+            edit.putBoolean(ListFragment.PREF_BT_WAS_OFF, false);
+        }
+        edit.commit();
 
         if ( state.bluetoothReceiver == null ) {
             MainActivity.info( "new bluetoothReceiver");
@@ -1789,14 +1800,37 @@ public final class MainActivity extends AppCompatActivity {
             // tell user, cuz this takes a little while
             Toast.makeText( this, getString(R.string.turning_wifi_off), Toast.LENGTH_SHORT ).show();
 
-            // well turn it of now that we're done
+            // well turn it off now that we're done
             final WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
             MainActivity.info( "turning back off wifi" );
             try {
-                wifiManager.setWifiEnabled( false );
+                wifiManager.setWifiEnabled(false);
             }
             catch ( Exception ex ) {
                 MainActivity.error("exception turning wifi back off: " + ex, ex);
+            }
+        }
+
+        final boolean btWasOff = prefs.getBoolean( ListFragment.PREF_BT_WAS_OFF, false );
+        // don't call on emulator, it crashes it
+        if ( btWasOff && ! state.inEmulator ) {
+            // tell user, cuz this takes a little while
+            Toast.makeText( this, getString(R.string.turning_bt_off), Toast.LENGTH_SHORT ).show();
+
+            // well turn it off now that we're done
+            MainActivity.info( "turning back off bluetooth" );
+            try {
+                final BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
+                if (bt == null) {
+                    info("No bluetooth adapter");
+                }
+                else if (bt.isEnabled()) {
+                    info("Disable bluetooth");
+                    bt.disable();
+                }
+            }
+            catch ( Exception ex ) {
+                MainActivity.error("exception turning bluetooth back off: " + ex, ex);
             }
         }
 

@@ -295,5 +295,6 @@
     <string name="gps_permission">GPS (Fine Location)</string>
     <string name="cell_permission">Cell Location (Coarse Location)</string>
     <string name="allow_storage">Database is put on external storage by default, please allow media/file storage</string>
-
+    <string name="turning_bt_off">Turning Bluetooth back off</string>
+    <string name="turn_on_bt">Turning on Bluetooth</string>
 </resources>
