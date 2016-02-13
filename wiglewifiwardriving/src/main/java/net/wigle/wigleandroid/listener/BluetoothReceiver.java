@@ -1,7 +1,6 @@
 package net.wigle.wigleandroid.listener;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -16,10 +15,14 @@ import android.os.Build;
 
 import net.wigle.wigleandroid.DatabaseHelper;
 import net.wigle.wigleandroid.MainActivity;
+import net.wigle.wigleandroid.model.ConcurrentLinkedHashMap;
+import net.wigle.wigleandroid.model.Network;
+import net.wigle.wigleandroid.model.NetworkType;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import uk.co.alt236.bluetoothlelib.device.BluetoothLeDevice;
@@ -33,7 +36,7 @@ public final class BluetoothReceiver extends BroadcastReceiver {
     private MainActivity mainActivity;
     private final DatabaseHelper dbHelper;
     private final AtomicBoolean scanning = new AtomicBoolean(false);
-
+    private final Map<String,Network> currentBluetoothNetworks = new ConcurrentLinkedHashMap<String, Network>(64);
     private final ScanCallback scanCallback;
 
     public BluetoothReceiver(final MainActivity mainActivity, final DatabaseHelper dbHelper ) {
@@ -97,6 +100,11 @@ public final class BluetoothReceiver extends BroadcastReceiver {
                     final AdRecord adRecord = adRecordStore.getRecord(i);
                     MainActivity.info("LE adRecord(" + i + "): " + adRecord);
                 }
+
+                final String bssid = device.getAddress();
+                final String ssid = device.getName();
+                final String capabilities = "LE";
+                final Network network = new Network(bssid, ssid, 0, capabilities, scanResult.getRssi(), NetworkType.BT);
 
             }
         }
@@ -163,6 +171,11 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             if (Build.VERSION.SDK_INT >= 15) {
                 MainActivity.info("BT bluetooth uuids: " + Arrays.toString(device.getUuids()));
             }
+
+            final String bssid = device.getAddress();
+            final String ssid = device.getName();
+            final String capabilities = device.getBluetoothClass() + ";" + device.getBondState();
+            final Network network = new Network(bssid, ssid, 0, capabilities, 0, NetworkType.BT);
 
         }
     }
