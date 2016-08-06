@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @param <K> key
  * @param <V> value
  */
-public final class ConcurrentLinkedHashMap<K,V> {
+public final class ConcurrentLinkedHashMap<K,V> implements Map<K,V> {
     private final ConcurrentHashMap<K,V> map;
     private final LinkedBlockingQueue<K> queue;
     private int count = 0;
@@ -50,6 +50,21 @@ public final class ConcurrentLinkedHashMap<K,V> {
             }
         }
         return previous;
+    }
+
+    public void putAll(Map<? extends K,? extends V> map) {
+        
+    }
+
+
+    public V remove( Object key ) {
+        synchronized( WRITE_LOCK ) {
+            return map.remove(key);
+        }
+    }
+
+    public V get( Object key ) {
+        return map.get( key );
     }
 
     public V get( K key ) {

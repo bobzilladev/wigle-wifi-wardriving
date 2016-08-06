@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.wigle.wigleandroid.background.FileUploaderTask;
 import net.wigle.wigleandroid.listener.BatteryLevelReceiver;
+import net.wigle.wigleandroid.listener.BluetoothReceiver;
 import net.wigle.wigleandroid.listener.GPSListener;
 import net.wigle.wigleandroid.listener.PhoneState;
 import net.wigle.wigleandroid.listener.WifiReceiver;
@@ -33,6 +34,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -104,6 +107,7 @@ public final class MainActivity extends AppCompatActivity {
         WifiLock wifiLock;
         GPSListener gpsListener;
         WifiReceiver wifiReceiver;
+        BluetoothReceiver bluetoothReceiver;
         NumberFormat numberFormat0;
         NumberFormat numberFormat1;
         NumberFormat numberFormat8;
@@ -214,6 +218,7 @@ public final class MainActivity extends AppCompatActivity {
             // tell those that need it that we have a new context
             state.gpsListener.setMainActivity( this );
             state.wifiReceiver.setMainActivity( this );
+            state.bluetoothReceiver.setMainActivity( this );
             if ( state.fileUploaderTask != null ) {
                 state.fileUploaderTask.setContext( this );
             }
@@ -284,6 +289,8 @@ public final class MainActivity extends AppCompatActivity {
         setupBattery();
         info("setupSound");
         setupSound();
+        info("setupBluetooth");
+        setupBluetooth();
         info("setupWifi");
         setupWifi();
         info("setupLocation"); // must be after setupWifi
@@ -308,6 +315,7 @@ public final class MainActivity extends AppCompatActivity {
                 permissionsNeeded.add(mainActivity.getString(R.string.cell_permission));
             }
             addPermission(permissionsList, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            addPermission(permissionsList, Manifest.permission.BLUETOOTH);
 
             if (!permissionsList.isEmpty()) {
                 // The permission is NOT already granted.
@@ -621,7 +629,7 @@ public final class MainActivity extends AppCompatActivity {
     static void setLockScreen( Fragment fragment, boolean lockScreen ) {
         final MainActivity main = getMainActivity(fragment);
         if ( main != null ) {
-            main.setLockScreen( lockScreen );
+            main.setLockScreen(lockScreen);
         }
     }
 
@@ -744,9 +752,9 @@ public final class MainActivity extends AppCompatActivity {
     public static CheckBox prefSetCheckBox( final Context context, final View view, final int id,
                                             final String pref, final boolean def ) {
 
-        final SharedPreferences prefs = context.getSharedPreferences( ListFragment.SHARED_PREFS, 0);
+        final SharedPreferences prefs = context.getSharedPreferences(ListFragment.SHARED_PREFS, 0);
         final CheckBox checkbox = (CheckBox) view.findViewById( id );
-        checkbox.setChecked( prefs.getBoolean( pref, def ) );
+        checkbox.setChecked(prefs.getBoolean(pref, def));
         return checkbox;
     }
 
@@ -766,7 +774,7 @@ public final class MainActivity extends AppCompatActivity {
                                                final String pref, final boolean def ) {
         final SharedPreferences prefs = fragment.getActivity().getSharedPreferences(ListFragment.SHARED_PREFS, 0);
         final Editor editor = prefs.edit();
-        final CheckBox checkbox = prefSetCheckBox( prefs, view, id, pref, def );
+        final CheckBox checkbox = prefSetCheckBox(prefs, view, id, pref, def);
         checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(final CompoundButton buttonView, final boolean isChecked) {
@@ -861,6 +869,21 @@ public final class MainActivity extends AppCompatActivity {
         catch ( final IllegalArgumentException ex ) {
             info( "wifiReceiver not registered: " + ex );
         }
+
+        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter != null && bluetoothAdapter.isDiscovering()) {
+            bluetoothAdapter.cancelDiscovery();
+        }
+        try {
+            info("unregister bluetoothReceiver");
+            unregisterReceiver( state.bluetoothReceiver );
+        }
+        catch ( final IllegalArgumentException ex ) {
+            info( "bluetoothReceiver not registered: " + ex );
+        }
+        if (state.bluetoothReceiver != null) {
+            state.bluetoothReceiver.stopScanning();
+        }
     }
 
     @Override
@@ -925,7 +948,7 @@ public final class MainActivity extends AppCompatActivity {
 
     @Override
     public void onStart() {
-        MainActivity.info("MAIN: start." );
+        MainActivity.info("MAIN: start.");
         super.onStart();
     }
 
@@ -963,7 +986,7 @@ public final class MainActivity extends AppCompatActivity {
 
     public static void setLocale( final Context context, final Configuration config ) {
         final SharedPreferences prefs = context.getSharedPreferences(ListFragment.SHARED_PREFS, 0);
-        final String lang = prefs.getString( ListFragment.PREF_LANGUAGE, "" );
+        final String lang = prefs.getString(ListFragment.PREF_LANGUAGE, "");
         final String current = config.locale.getLanguage();
         MainActivity.info("current lang: " + current + " new lang: " + lang);
         Locale newLocale = null;
@@ -988,7 +1011,7 @@ public final class MainActivity extends AppCompatActivity {
      * @return the mediaplayer for soundId or null if it could not be created.
      */
     private MediaPlayer createMediaPlayer( final int soundId ) {
-        final MediaPlayer sound = createMp( getApplicationContext(), soundId );
+        final MediaPlayer sound = createMp(getApplicationContext(), soundId);
         if ( sound == null ) {
             info( "sound null from media player" );
             return null;
@@ -1151,7 +1174,7 @@ public final class MainActivity extends AppCompatActivity {
         Log.w(LOG_TAG, Thread.currentThread().getName() + "] " + value, t);
     }
     public static void error( final String value, final Throwable t ) {
-        Log.e( LOG_TAG, Thread.currentThread().getName() + "] " + value, t );
+        Log.e(LOG_TAG, Thread.currentThread().getName() + "] " + value, t);
     }
 
     /**
@@ -1346,7 +1369,7 @@ public final class MainActivity extends AppCompatActivity {
 
     public static boolean isScanning(final Context context) {
         final SharedPreferences prefs = context.getSharedPreferences( ListFragment.SHARED_PREFS, 0 );
-        return prefs.getBoolean( ListFragment.PREF_SCAN_RUNNING, true );
+        return prefs.getBoolean(ListFragment.PREF_SCAN_RUNNING, true);
     }
 
     public void playNewNetSound() {
@@ -1411,8 +1434,7 @@ public final class MainActivity extends AppCompatActivity {
                 MainActivity.info( "wifi on");
                 turnedWifiOn = true;
             }
-        }
-        else {
+        } else {
             edit.putBoolean( ListFragment.PREF_WIFI_WAS_OFF, false );
         }
         edit.apply();
@@ -1421,7 +1443,7 @@ public final class MainActivity extends AppCompatActivity {
             MainActivity.info( "new wifiReceiver");
             // wifi scan listener
             // this receiver is the main workhorse of the entire app
-            state.wifiReceiver = new WifiReceiver( this, state.dbHelper );
+            state.wifiReceiver = new WifiReceiver( this, state.dbHelper);
             state.wifiReceiver.setupWifiTimer( turnedWifiOn );
         }
 
@@ -1438,10 +1460,48 @@ public final class MainActivity extends AppCompatActivity {
 
     private void setupWifiReceiverIntent() {
         // register
-        MainActivity.info( "register BroadcastReceiver");
+        info("register wifi BroadcastReceiver");
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction( WifiManager.SCAN_RESULTS_AVAILABLE_ACTION );
-        registerReceiver( state.wifiReceiver, intentFilter );
+        registerReceiver(state.wifiReceiver, intentFilter);
+    }
+
+    private void setupBluetooth() {
+        final BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
+        if (bt == null) {
+            info("No bluetooth adapter");
+            return;
+        }
+        final SharedPreferences prefs = getSharedPreferences( ListFragment.SHARED_PREFS, 0 );
+        final Editor edit = prefs.edit();
+        if (!bt.isEnabled()) {
+            info("Enable bluetooth");
+            // tell user, cuz this takes a little while
+            Toast.makeText( this, getString(R.string.turn_on_bt), Toast.LENGTH_LONG ).show();
+            edit.putBoolean(ListFragment.PREF_BT_WAS_OFF, true);
+            bt.enable();
+        }
+        else {
+            edit.putBoolean(ListFragment.PREF_BT_WAS_OFF, false);
+        }
+        edit.commit();
+
+        if ( state.bluetoothReceiver == null ) {
+            MainActivity.info( "new bluetoothReceiver");
+            // bluetooth scan listener
+            // this receiver is the main workhorse of bluetooth scanning
+            state.bluetoothReceiver = new BluetoothReceiver( this, state.dbHelper );
+        }
+
+        info("register bluetooth BroadcastReceiver");
+        final IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(state.bluetoothReceiver, intentFilter);
+    }
+
+    public void bluetoothScan() {
+        if (state.bluetoothReceiver != null) {
+            state.bluetoothReceiver.bluetoothScan();
+        }
     }
 
     /**
@@ -1759,14 +1819,37 @@ public final class MainActivity extends AppCompatActivity {
             // tell user, cuz this takes a little while
             Toast.makeText( this, getString(R.string.turning_wifi_off), Toast.LENGTH_SHORT ).show();
 
-            // well turn it of now that we're done
+            // well turn it off now that we're done
             final WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
             MainActivity.info( "turning back off wifi" );
             try {
-                wifiManager.setWifiEnabled( false );
+                wifiManager.setWifiEnabled(false);
             }
             catch ( Exception ex ) {
                 MainActivity.error("exception turning wifi back off: " + ex, ex);
+            }
+        }
+
+        final boolean btWasOff = prefs.getBoolean( ListFragment.PREF_BT_WAS_OFF, false );
+        // don't call on emulator, it crashes it
+        if ( btWasOff && ! state.inEmulator ) {
+            // tell user, cuz this takes a little while
+            Toast.makeText( this, getString(R.string.turning_bt_off), Toast.LENGTH_SHORT ).show();
+
+            // well turn it off now that we're done
+            MainActivity.info( "turning back off bluetooth" );
+            try {
+                final BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
+                if (bt == null) {
+                    info("No bluetooth adapter");
+                }
+                else if (bt.isEnabled()) {
+                    info("Disable bluetooth");
+                    bt.disable();
+                }
+            }
+            catch ( Exception ex ) {
+                MainActivity.error("exception turning bluetooth back off: " + ex, ex);
             }
         }
 
