@@ -351,6 +351,7 @@ public class WifiReceiver extends BroadcastReceiver {
             }
         }
 
+        // update list view
         final int sort = prefs.getInt(ListFragment.PREF_LIST_SORT, SIGNAL_COMPARE);
         Comparator<Network> comparator = signalCompare;
         switch ( sort ) {
@@ -778,6 +779,9 @@ public class WifiReceiver extends BroadcastReceiver {
                     scanInFlight = true;
                 }
             }
+
+            // schedule a bluetooth scan
+            mainActivity.bluetoothScan();
 
             final long now = System.currentTimeMillis();
             if ( lastScanResponseTime < 0 ) {
