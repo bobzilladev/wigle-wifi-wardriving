@@ -8,7 +8,7 @@ public enum NetworkType {
     GSM("G"),
     CDMA("C"),
     LTE("L"),
-    WCDMA("D");
+    WCDMA("D"),
     BT("B"),
     NFC("N");
 
