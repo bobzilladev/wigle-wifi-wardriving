@@ -1,5 +1,7 @@
 package net.wigle.wigleandroid.listener;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -42,6 +44,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.SyncStateContract;
 import android.telephony.CellIdentityCdma;
 import android.telephony.CellIdentityNr;
 import android.telephony.CellInfo;
@@ -62,6 +65,8 @@ import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 
 import com.google.android.gms.maps.model.LatLng;
+
+import androidx.annotation.RequiresApi;
 
 /**
  * Primary receiver logic for WiFi and Cell nets.
@@ -250,6 +255,12 @@ public class WifiReceiver extends BroadcastReceiver {
                     MainActivity.addNetworkToMap(network);
                 }
 
+                if (Build.VERSION.SDK_INT >= 31) {
+                    for (final ScanResult.InformationElement info : result.getInformationElements()) {
+                        Logging.info("id: " + info.getId());
+                    }
+                }
+
                 // if we're showing current, or this was just added, put on the list
                 if ( showCurrent || added ) {
                     if ( FilterMatcher.isOk( ssidMatcher, bssidMatcher, prefs, PreferenceKeys.FILTER_PREF_PREFIX, network ) ) {
@@ -430,6 +441,72 @@ public class WifiReceiver extends BroadcastReceiver {
         if ( speechPeriod != 0 && now - previousTalkTime > speechPeriod * 1000L ) {
             doAnnouncement( preQueueSize, newWifiCount, newCellCount, now );
         }
+    }
+
+    public static final int NIBBLE_MASK = 0x0f;
+    public static final int BYTE_MASK = 0xff;
+
+    public static final int EID_ROAMING_CONSORTIUM = 111;
+
+    // mostly copied from https://android.googlesource.com/platform/frameworks/opt/net/wifi/+/6f5af9b7f69b15369238bd2642c46638ba1f0255/service/java/com/android/server/wifi/util/InformationElementUtil.java#197
+    public static class RoamingConsortium {
+        public int anqpOICount = 0;
+        public long[] roamingConsortiums = null;
+        @RequiresApi(api = Build.VERSION_CODES.R)
+        public void from(ScanResult.InformationElement ie) {
+            if (ie.getId() != EID_ROAMING_CONSORTIUM) {
+                throw new IllegalArgumentException("Element id is not ROAMING_CONSORTIUM, : "
+                        + ie.getId());
+            }
+            ByteBuffer data = ie.getBytes().order(ByteOrder.LITTLE_ENDIAN);
+            anqpOICount = data.get() & BYTE_MASK;
+            int oi12Length = data.get() & BYTE_MASK;
+            int oi1Length = oi12Length & NIBBLE_MASK;
+            int oi2Length = (oi12Length >>> 4) & NIBBLE_MASK;
+            // `limit` likely isn't right here, was an array.length in the android source
+            // https://android.googlesource.com/platform/frameworks/opt/net/wifi/+/6f5af9b7f69b15369238bd2642c46638ba1f0255/service/java/com/android/server/wifi/util/InformationElementUtil.java#212
+            int oi3Length = ie.getBytes().limit() - 2 - oi1Length - oi2Length;
+            int oiCount = 0;
+            if (oi1Length > 0) {
+                oiCount++;
+                if (oi2Length > 0) {
+                    oiCount++;
+                    if (oi3Length > 0) {
+                        oiCount++;
+                    }
+                }
+            }
+            roamingConsortiums = new long[oiCount];
+            if (oi1Length > 0 && roamingConsortiums.length > 0) {
+                roamingConsortiums[0] =
+                        getInteger(data, ByteOrder.BIG_ENDIAN, oi1Length);
+            }
+            if (oi2Length > 0 && roamingConsortiums.length > 1) {
+                roamingConsortiums[1] =
+                        getInteger(data, ByteOrder.BIG_ENDIAN, oi2Length);
+            }
+            if (oi3Length > 0 && roamingConsortiums.length > 2) {
+                roamingConsortiums[2] =
+                        getInteger(data, ByteOrder.BIG_ENDIAN, oi3Length);
+            }
+        }
+    }
+
+    public static long getInteger(ByteBuffer payload, ByteOrder bo, int size) {
+        byte[] octets = new byte[size];
+        payload.get(octets);
+        long value = 0;
+        if (bo == ByteOrder.LITTLE_ENDIAN) {
+            for (int n = octets.length - 1; n >= 0; n--) {
+                value = (value << Byte.SIZE) | (octets[n] & BYTE_MASK);
+            }
+        }
+        else {
+            for (byte octet : octets) {
+                value = (value << Byte.SIZE) | (octet & BYTE_MASK);
+            }
+        }
+        return value;
     }
 
     /**
