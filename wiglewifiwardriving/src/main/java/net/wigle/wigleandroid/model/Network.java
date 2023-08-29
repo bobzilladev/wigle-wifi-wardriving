@@ -11,6 +11,8 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
 
+import net.wigle.wigleandroid.util.Logging;
+
 /**
  * network data. not thread-safe.
  */
@@ -71,17 +73,23 @@ public final class Network implements ClusterItem {
     public enum NetworkBand {
         WIFI_2_4_GHZ, WIFI_5_GHZ, WIFI_6_GHZ, WIFI_60_GHZ, CELL_2_3_GHZ, UNDEFINED
     }
+
+    private boolean passpoint;
+
     /**
      * convenience constructor
      * @param scanResult a result from a wifi scan
      */
+    //
     public Network( final ScanResult scanResult ) {
         this( scanResult.BSSID, scanResult.SSID, scanResult.frequency, scanResult.capabilities,
-                scanResult.level,  NetworkType.WIFI, null);
+                scanResult.level,  NetworkType.WIFI, null );
+        Logging.info("NETWORK ADD: " + scanResult.SSID);
+        Logging.info("NETWORK ADD PASSPOINT: " + scanResult.isPasspointNetwork());
     }
 
     public Network( final String bssid, final String ssid, final int frequency, final String capabilities,
-                    final int level, final NetworkType type ) {
+                    final int level, final NetworkType type) {
         this(bssid, ssid, frequency, capabilities, level, type, null);
     }
 
@@ -166,6 +174,10 @@ public final class Network implements ClusterItem {
 
     public String getCapabilities() {
         return capabilities;
+    }
+
+    public Boolean getPasspoint() {
+        return passpoint;
     }
 
     public String getShowCapabilities() {
