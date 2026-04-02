@@ -1,5 +1,26 @@
 import groovy.sql.Sql
 
+/** True when built from foss-main (git) or when CI sets -PwigleFossMain / env WIGLE_FOSS_MAIN. */
+def isFossMainBuild() {
+    if (project.hasProperty('wigleFossMain')) {
+        return project.wigleFossMain.toString().toBoolean()
+    }
+    final String env = System.getenv('WIGLE_FOSS_MAIN')
+    if (env != null) {
+        return env.equalsIgnoreCase('true') || '1'.equals(env)
+    }
+    try {
+        final proc = ['git', 'rev-parse', '--abbrev-ref', 'HEAD'].execute(null, rootProject.projectDir)
+        proc.waitFor()
+        if (proc.exitValue() == 0) {
+            return 'foss-main'.equals(proc.text.trim())
+        }
+    } catch (ignored) {
+        // no git / shallow clone
+    }
+    return false
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 apply plugin: 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
@@ -14,6 +35,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled true
+        buildConfigField "boolean", "FOSS_MAIN_BUILD", "${isFossMainBuild()}"
     }
     buildFeatures {
         buildConfig = true

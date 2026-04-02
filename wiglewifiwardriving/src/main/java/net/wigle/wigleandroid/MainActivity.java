@@ -98,6 +98,7 @@ import net.wigle.wigleandroid.ui.SetNetworkListAdapter;
 import net.wigle.wigleandroid.ui.ThemeUtil;
 import net.wigle.wigleandroid.ui.WiGLEToast;
 import net.wigle.wigleandroid.util.BluetoothUtil;
+import net.wigle.wigleandroid.util.BuildReleaseTag;
 import net.wigle.wigleandroid.util.FileUtility;
 import net.wigle.wigleandroid.util.InstallUtility;
 import net.wigle.wigleandroid.util.Logging;
@@ -1404,7 +1405,7 @@ public final class MainActivity extends AppCompatActivity implements TextToSpeec
                         final DateFormat format = SimpleDateFormat.getDateTimeInstance();
                         builder.append(format.format(new Date())).append("\n");
                         if (pi != null) {
-                            builder.append("versionName: ").append(pi.versionName).append("\n");
+                            builder.append("versionName: ").append(BuildReleaseTag.tagVersionForExports(pi.versionName)).append("\n");
                             builder.append("packageName: ").append(pi.packageName).append("\n");
                         }
                         if (detail != null) {
