@@ -134,6 +134,9 @@ public final class SettingsFragment extends Fragment implements DialogListener {
         });
         //hack manual padding
         view.post(() -> {
+            if (!isAdded()) {
+                return;
+            }
             final Context context = getContext();
             int navBarHeight = context == null ? 0 : LayoutUtil.getNavigationBarHeight(getActivity(), context.getResources());
             if (navBarHeight > 0 && view.getPaddingBottom() == 0) {
@@ -245,8 +248,9 @@ public final class SettingsFragment extends Fragment implements DialogListener {
             if (allowRefresh) {
                 allowRefresh = false;
                 final View view = getView();
-
-                updateView(view);
+                if (view != null) {
+                    updateView(view);
+                }
 
                 //ALIBI: what doesn't work here:
                 //does not successfully reload
