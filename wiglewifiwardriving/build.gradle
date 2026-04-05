@@ -36,6 +36,11 @@ android {
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled true
         buildConfigField "boolean", "FOSS_MAIN_BUILD", "${isFossMainBuild()}"
+        ndk {
+            if (isFossMainBuild()) {
+                abiFilters "armeabi-v7a", "arm64-v8a"
+            }
+        }
     }
     buildFeatures {
         buildConfig = true
