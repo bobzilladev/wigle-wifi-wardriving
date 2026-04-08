@@ -11,7 +11,7 @@ As of January 2023, this application supports Android SDK versions 24 (Nougat) a
 **Please note** that older releases will fail certificate transparency checks for calls to WiGLE.net's API.
 
 ## Features
-- View and map local RF signals including WiFi, Blueooth, and Cell
+- View and map local RF signals including WiFi, Bluetooth, and Cell
 - Accumulate a database of wireless signal observations
 - Search and export observed data
 - Integrate with a [WiGLE.net account](https://wigle.net) for competition, statistics, and online aggregation and visualization
