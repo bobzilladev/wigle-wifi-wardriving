@@ -116,7 +116,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.11.0'
     implementation 'com.github.edwardstock:edittext-mask:1.0.7'
     implementation 'com.goebl:simplify:1.0.0'
-    implementation "com.appmattus.certificatetransparency:certificatetransparency-android:2.8.20"
     implementation 'com.google.maps.android:android-maps-utils:3.1.1'
     implementation 'org.apache.commons:commons-csv:1.10.0'
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.1'
