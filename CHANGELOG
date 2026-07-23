@@ -1,3 +1,9 @@
+* 2.110 (07/22/2026)
+Greek language (thanks Yiannis Manassis!)
+More FOSS map config validation
+Fix RCOI data parsing
+Various bug fixes
+
 * 2.109 (05/13/2026)
 Overhaul database activity
 Upload partitioning
